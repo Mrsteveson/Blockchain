@@ -13,19 +13,19 @@ def proof_of_work(block):
     in an effort to find a number that is a valid proof
     :return: A valid proof for the provided block
     """
-    # block_string = json.dumps(block, sort_keys=True).encode()
-    # proof = 0
-    # while not self.valid_proof(block_string, proof):
-    #     proof += 1
-    # guess = f'{block_string}{proof}'.encode()
-    # guess_hash = hashlib.sha256(guess).hexdigest()
-    # return proof
-
     block_string = json.dumps(block, sort_keys=True).encode()
     proof = 0
-    while valid_proof(block_string, proof) is False:
+    while not self.valid_proof(block_string, proof):
         proof += 1
+    guess = f'{block_string}{proof}'.encode()
+    guess_hash = hashlib.sha256(guess).hexdigest()
     return proof
+
+    # block_string = json.dumps(block, sort_keys=True).encode()
+    # proof = 0
+    # while valid_proof(block_string, proof) is False:
+    #     proof += 1
+    # return proof
 
 
 def valid_proof(block_string, proof):
@@ -88,4 +88,3 @@ if __name__ == '__main__':
             print(coins_mined)
         else:
             print(data.get('message'))
-
