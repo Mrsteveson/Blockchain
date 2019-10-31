@@ -6,6 +6,7 @@ import json
 from time import time
 from uuid import uuid4
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 import sys
 
 class Blockchain(object):
@@ -107,7 +108,7 @@ class Blockchain(object):
 
 # Instantiate our Node
 app = Flask(__name__)
-
+CORS(app)
 # Generate a globally unique address for this node
 node_identifier = str(uuid4()).replace('-', '')
 
@@ -168,7 +169,7 @@ def new_transaction():
     return jsonify(response), 200
 
 @app.route('/chain', methods=['GET'])
-def full_chain():
+def cross_origin_full_chain():
     response = {
         'length': len(blockchain.chain),
         'chain': blockchain.chain,
@@ -188,4 +189,4 @@ def last_block():
 
 # Run the program on port 5000
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='localhost', port=5000)
