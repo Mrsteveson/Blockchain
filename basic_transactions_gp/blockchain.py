@@ -64,9 +64,9 @@ class Blockchain(object):
 
         # TODO: Create the block_string
         string_object = json.dumps(block, sort_keys=True)
-        block_string = string_object.encode()
+        block_string = string_object
         # TODO: Hash this string using sha256
-        raw_hash = hashlib.sha256(block_string)
+        raw_hash = hashlib.sha256(block_string.encode())
         hex_hash = raw_hash.hexdigest()
 
         # By itself, the sha256 function returns the hash in a raw string
@@ -97,7 +97,13 @@ class Blockchain(object):
         guess = f'{block_string}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         # return True or False
-        return guess_hash[:6] == "000000"
+        return guess_hash[:3] == "000"
+
+    def new_transaction(self, sender, recipient, amount):
+        transaction = {'sender': sender, 'recipient': recipient, 'amount': amount}
+        self.current_transactions.append(transaction)
+
+        return self.last_block['index'] + 1
 
 # Instantiate our Node
 app = Flask(__name__)
@@ -123,6 +129,13 @@ def mine():
     last_block_string = json.dumps(last_block, sort_keys=True)
 
     if blockchain.valid_proof(last_block_string, submitted_proof):
+        # Add new transaction
+        blockchain.new_transaction(
+            sender = '0',
+            recipient = values.get('id'),
+            amount = 1
+        )
+
         # Forge New Block
         previous_hash = blockchain.hash(last_block)
         block = blockchain.new_block(submitted_proof, previous_hash)
@@ -138,6 +151,21 @@ def mine():
     else:
         response = {'message': 'Invalid Proof'}
         return jsonify(response), 400
+
+@app.route('/transactions/new', methods=['POST'])
+def new_transaction():
+    values = request.get_json()
+    # Check required fields.
+    required = ['recipient', 'sender', 'amount']
+    if not all(k in values for k in required):
+        response = {'message': 'Missing Required Values'}
+        return jsonify(response), 400
+
+    # Create New Transaction
+    index = blockchain.new_transaction(values['recipient'], values['sender'], values['amount'])
+    # Return success response
+    response = {'message': f"Transaction will be added to block {index}"}
+    return jsonify(response), 200
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
