@@ -5,12 +5,14 @@ import json
 from time import time
 from uuid import uuid4
 from flask import Flask, jsonify, request
+import sys
 
 class Blockchain(object):
     def __init__(self):
         self.chain = []
         self.current_transactions = []
         # Create the genesis block
+        self.nodes = set()
         self.new_block(proof=100, previous_hash=1)
 
     def new_block(self, proof, previous_hash=None):
@@ -113,7 +115,7 @@ class Blockchain(object):
         guess = f'{block_string}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         # return True or False
-        return guess_hash[:3] == "000"
+        return guess_hash[:6] == "000000"
 
 # Instantiate our Node
 app = Flask(__name__)
@@ -126,9 +128,16 @@ blockchain = Blockchain()
 
 @app.route('/mine', methods=['POST'])
 def mine():
-    # Run the proof of work algorithm to get the next proof
-    # proof = blockchain.proof_of_work(blockchain.last_block)
-    # Forge the new Block by adding it to the chain with the proof
+    # Wed 1st Pass Attempt.
+    # data = request.get_json()
+    # proof = data['proof']
+    # block_string = json.dumps(blockchain.last_block, sort_keys=True).encode()
+    # if not blockchain.valid_proof(block_string, proof):
+    #     response = {
+    #         'message': 'Proof is Invalid!'
+    #     }
+    # return jsonify(response), 400
+
     # previous_hash = blockchain.hash(blockchain.last_block)
     # block = blockchain.new_block(proof, previous_hash)
     # response = {
@@ -140,25 +149,34 @@ def mine():
     # }
     # return jsonify(response), 200
 
-    data = request.get_json()
-    proof = data['proof']
-    block_string = json.dumps(blockchain.last_block, sort_keys=True).encode()
-    if not blockchain.valid_proof(block_string, proof):
-        response = {
-            'message': 'Proof is Invalid!'
-        }
-    return jsonify(response), 400
+    values = request.get_json()
+    required = ['proof', 'id']
 
-    previous_hash = blockchain.hash(blockchain.last_block)
-    block = blockchain.new_block(proof, previous_hash)
-    response = {
+    if not all(k in values for k in required):
+        response = {'message': 'Missing Required Values'}
+        return jsonify(response), 400
+
+    submitted_proof = values.get('proof')
+    # Check to see if the proof is valid.
+    last_block = blockchain.last_block
+    last_block_string = json.dumps(last_block, sort_keys=True)
+
+    if blockchain.valid_proof(last_block_string, submitted_proof):
+        # Forge New Block
+        previous_hash = blockchain.hash(last_block)
+        block = blockchain.new_block(submitted_proof, previous_hash)
+
+        response = {
         'message': "New Block Forged",
         'index': block['index'],
         'transactions': block['transactions'],
         'proof': block['proof'],
         'previous_hash': block['previous_hash'],
-    }
-    return jsonify(response), 200
+        }
+        return jsonify(response), 200
+    else:
+        response = {'message': 'Invalid Proof'}
+        return jsonify(response), 400
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
@@ -172,6 +190,7 @@ def full_chain():
 def home():
     return "<h1>Welcome to blockchain!</h1>", 200
 
+# Last Block Endpoing (Wed MVP)
 @app.route('/last_block', methods=['GET'])
 def last_block():
     response = {
