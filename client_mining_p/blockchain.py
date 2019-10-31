@@ -63,9 +63,9 @@ class Blockchain(object):
 
         # TODO: Create the block_string
         string_object = json.dumps(block, sort_keys=True)
-        block_string = string_object.encode()
+        block_string = string_object
         # TODO: Hash this string using sha256
-        raw_hash = hashlib.sha256(block_string)
+        raw_hash = hashlib.sha256(block_string.encode())
         hex_hash = raw_hash.hexdigest()
 
         # By itself, the sha256 function returns the hash in a raw string
